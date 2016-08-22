@@ -1,0 +1,78 @@
+---
+
+# general config management
+- name: create user
+  user: name=zabbix home={{ zabbix_installdir }} createhome=no system=yes
+
+- name: change owner of installation directory
+  file: path={{ zabbix_installdir }} recurse=yes owner=zabbix
+
+- name: add server binary to PATH
+  file: path=/usr/local/sbin/zabbix_server src={{ zabbix_installdir }}/sbin/zabbix_server state=link
+- name: add agentd binary to PATH
+  file: path=/usr/local/sbin/zabbix_agentd src={{ zabbix_installdir }}/sbin/zabbix_agentd state=link
+
+- name: symlink fping binary to where zabbix expects it
+  file: path=/usr/sbin/fping src=/usr/bin/fping state=link
+
+- name: register services
+  shell: chdir={{ zabbix_sourcedir }}/misc/init.d/debian/ cp * /etc/init.d/
+
+- name: configure ServerActive to be {{ zabbix_server }}
+  lineinfile: dest={{ zabbix_installdir }}/etc/zabbix_agentd.conf regexp="^ServerActive=.*" line='ServerActive={{ zabbix_server }}'
+- name: configure Server to be {{ zabbix_server }}
+  lineinfile: dest={{ zabbix_installdir }}/etc/zabbix_agentd.conf regexp="^Server=.*" line='Server={{ zabbix_server }}'
+- name: configure Hostname to be {{ ansible_hostname }}
+  lineinfile: dest={{ zabbix_installdir }}/etc/zabbix_agentd.conf regexp="^Hostname=.*" line='Hostname={{ ansible_hostname }}'
+
+# database
+- name: prepare database
+  apt: name=python-mysqldb
+
+- name: create database user
+  mysql_user: name=zabbix password=zabbix priv=zabbix.*:ALL
+
+- name: create database
+  mysql_db: name=zabbix login_user=zabbix login_password=zabbix
+
+- name: import schema into database
+  shell: mysql -uzabbix -pzabbix -h localhost zabbix < {{ zabbix_sourcedir }}/database/mysql/schema.sql
+
+- name: import images into database
+  shell: mysql -uzabbix -pzabbix -h localhost zabbix < {{ zabbix_sourcedir }}/database/mysql/images.sql
+
+- name: import data into database
+  shell: mysql -uzabbix -pzabbix -h localhost zabbix < {{ zabbix_sourcedir }}/database/mysql/data.sql
+
+# mail
+- name: install exim4 mta
+  apt: name=exim4
+
+# frontend
+- name: require web frontend dependencies
+  with_items: zabbix_web_dependencies
+  apt: name={{ item }} update_cache=no
+
+- name: copy web frontend to apache
+  command: chdir={{ zabbix_sourcedir }}/frontends/php cp -a . /var/www/zabbix
+
+- name: edit configuration to display web frontend
+  lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^\tDocumentRoot /var/www/html$" line=' DocumentRoot /var/www/zabbix'
+
+- name: allow access to web frontend
+  file: path=/var/www/zabbix owner=www-data group=www-data recurse=yes
+
+- name: change php.ini's post_max_size to 16M
+  lineinfile: dest=/etc/php5/apache2/php.ini regexp="^post_max_size.*" line='post_max_size = 16M'
+- name: change php.ini's max_execution_time to 300
+  lineinfile: dest=/etc/php5/apache2/php.ini regexp="^max_execution_time.*" line='max_execution_time = 300'
+- name: change php.ini's max_input_time to 300
+  lineinfile: dest=/etc/php5/apache2/php.ini regexp="^max_input_time.*" line='max_input_time = 300'
+- name: change php.ini's date.timezone to Europe/Berlin
+  lineinfile: dest=/etc/php5/apache2/php.ini regexp="^date.timezone.*" line='date.timezone = Europe/Berlin'
+
+- name: restart apache to apply configuration
+  service: name=apache2 state=restarted
+
+- name: info
+  debug: msg="now go to http://{{ zabbix_server }} and finish zabbix installation manually"

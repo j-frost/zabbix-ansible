@@ -1,0 +1,15 @@
+---
+- hosts: zabbix-servers
+  remote_user: root
+  roles:
+    - compiled-zabbix-server
+
+- hosts: zabbix-proxies
+  remote_user: root
+  roles:
+    - compiled-zabbix-proxy
+
+- hosts: zabbix-clients
+  remote_user: root
+  roles:
+    - compiled-zabbix-client

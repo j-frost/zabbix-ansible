@@ -1,0 +1,19 @@
+---
+zabbix_proxy_build_dependencies: 
+  - subversion
+  - gcc
+  - make
+  - autoconf
+  - automake
+  - pkg-config
+  - fping
+  - libopenipmi0
+  - libopenipmi-dev
+  - libsqlite3-dev
+  - libsnmp-base
+  - libsnmp30
+  - libsnmp-dev
+  - libssh2-1
+  - libssh2-1-dev
+  - snmpd
+  - libcurl4-openssl-dev

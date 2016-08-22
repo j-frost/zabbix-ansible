@@ -1,0 +1,40 @@
+---
+- name: avoid overriding configurations
+  shell: if [ -d "{{ zabbix_installdir }}" ]; then echo yes; else echo no; fi;
+  register: zabbix_existed
+
+- name: stop service
+  service: name=zabbix-proxy state=stopped
+  when: zabbix_existed.stdout == 'yes'
+
+- name: update apt cache
+  apt: update_cache=yes
+
+- name: install build dependencies
+  with_items: "{{zabbix_proxy_build_dependencies}}"
+  apt: name={{ item }} update_cache=no
+
+- name: check out zabbix from svn repository
+  subversion: repo=svn://svn.zabbix.com/tags/{{ zabbix_version }} dest={{ zabbix_sourcedir }}
+
+- name: bootstrap installer
+  command: chdir={{ zabbix_sourcedir }} ./bootstrap.sh
+
+- name: configure as proxy
+  command: chdir={{ zabbix_sourcedir }} ./configure --enable-proxy --enable-agent --with-sqlite3 -with-net-snmp --with-libcurl --with-openipmi --with-ssh2 --prefix={{ zabbix_installdir }}
+
+- name: make dbschema
+  shell: cd {{ zabbix_sourcedir }}; make -j$(($(nproc)+1)) dbschema
+
+- name: make install
+  shell: cd {{ zabbix_sourcedir }}; make -j$(($(nproc)+1)) install
+
+- name: set up environment
+  include: first_time_setup.yml
+  when: zabbix_existed.stdout == 'no'
+
+- name: (re-)start proxy service
+  service: name=zabbix-proxy state=restarted
+
+- name: (re-)start agent service
+  service: name=zabbix-agent state=restarted

@@ -1,0 +1,10 @@
+---
+- name: checking for installed zabbix version
+  shell: if [[ $(zabbix_agentd -V) == *{{ zabbix_version }}* ]]; then echo current; else echo no; fi;
+  args:
+    executable: /bin/bash
+  register: zabbix_version_check
+
+- name: initiating zabbix setup
+  include: setup.yml
+  when: zabbix_version_check.stdout == 'no'

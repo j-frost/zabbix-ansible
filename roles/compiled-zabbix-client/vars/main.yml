@@ -1,0 +1,8 @@
+---
+zabbix_agent_build_dependencies: 
+  - subversion
+  - gcc
+  - make
+  - autoconf
+  - automake
+  - pkg-config

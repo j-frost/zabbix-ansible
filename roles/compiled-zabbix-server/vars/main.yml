@@ -1,0 +1,35 @@
+---
+zabbix_server_build_dependencies:
+  - subversion
+  - gcc
+  - make
+  - autoconf
+  - automake
+  - pkg-config
+  - fping
+  - libaio1
+  - libdbd-mysql-perl
+  - libdbi-perl
+  - libhtml-template-perl
+  - libiksemel3
+  - libltdl7
+  - libodbc1
+  - libopenipmi0
+  - libopenipmi-dev
+  - libperl5.18
+  - libsensors4
+  - libsnmp-base
+  - libsnmp30
+  - libsnmp-dev
+  - libssh2-1
+  - libssh2-1-dev
+  - libterm-readkey-perl
+  - mysql-client-5.5
+  - mysql-client-core-5.5
+  - mysql-server
+  - mysql-server-5.5
+  - mysql-server-core-5.5
+  - libmysqlclient-dev
+  - snmpd
+  - default-jdk
+  - libcurl4-openssl-dev
